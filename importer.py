@@ -10,37 +10,38 @@ import getpass
 from github import Github
 
 class Card:
-    def __init__(self, name="", number=0, text=None):
-        if text is None:
-            text = []
+    def __init__(self, name=None, faction=None, type=None, text=None):
         self.name = name
-        self.number = number
+        self.faction = faction
+        self.type = type
         self.text = text
 
     def issue_title(self):
-        return "%d. %s" % (self.number, self.name)
+        return "{0.faction} - {0.name}".format(self)
 
     def issue_body(self):
-        return """### %s
-
-> %s
+        return """### {0.name}
+{0.faction} - {0.type}
+> {1}
 
 ### Progress
 - [ ] Implement functionality
-- [ ] Write tests""" % (self.name, "\n".join(self.text))
+- [ ] Write tests""".format(self, "\n".join(self.text))
 
 def read_file(fn):
     cards = []
     with open(fn, 'r') as f:
         curr_card = Card()
         for l in f:
-            match = re.match(r'(\d+)\.\s*(.+?)\s*$', l)
+            match = re.match(r'^(.+?)\t(.+?)\t(.+?)\t"(.+?)$', l)
             if match:
                 cards.append(curr_card)
-                curr_card = Card(name=match.group(2), number=int(match.group(1)))
+                curr_card = Card(name=match.group(2), faction=match.group(1), type=match.group(3), text=[match.group(4)])
             else:
-                if l.strip() and (not l.strip() in ["Anarch", "Criminal", "Shaper", "Neutral Runner", "Haas-Bioroid", "Jinteki", "NBN", "Weyland"]):
-                    curr_card.text.append(l.strip())
+                l = l.strip()
+                if l[-1] == '"':
+                    l = l[:-1]
+                curr_card.text.append(l)
         cards.append(curr_card)
     return cards[1:]
 
